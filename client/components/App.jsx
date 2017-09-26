@@ -2,24 +2,42 @@ import React, { Component } from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import Checkbox from 'material-ui/Checkbox';
 import {List, ListItem} from 'material-ui/List';
 import ActionDelete from 'material-ui/svg-icons/action/delete';
 
-const Activity = (props) => {
-  return(
-    <ListItem primaryText = {props.name} rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { ()=>{} } />} />
-  );
-};
+class Activity extends Component {
 
-const ActivityList = (props) => {
-  return(
-    <MuiThemeProvider>
-      <List>
-        { props.activities.map((activity, id) => <Activity key = {id} name = {activity} />) }
-      </List>
-    </MuiThemeProvider>
-  );
-};
+  state = {
+    checked : false
+  }
+
+  updateCheck = (checked) => {
+    this.setState((prevState) => {
+      return {
+        checked : !prevState.checked
+      }
+    })
+  }
+
+  render() {
+    return(
+      <ListItem leftCheckbox = { <Checkbox  onCheck = { this.updateCheck.bind(this) } /> } primaryText = {this.props.name} rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { () => {} } />} />
+    );
+  }
+}
+
+class ActivityList extends Component {
+  render() {
+    return(
+      <MuiThemeProvider>
+        <List>
+          { this.props.activities.map((activity, id) => <Activity key = {id} name = {activity} activityId = {id} />) }
+        </List>
+      </MuiThemeProvider>
+    );
+  }
+}
 
 class Form extends Component {
   state = {
@@ -37,12 +55,7 @@ class Form extends Component {
     return(
       <MuiThemeProvider>
         <form onSubmit = {this.handleSubmit}>
-          {/* <input type = "text" 
-                value = { this.state.activity } 
-                onChange = {(event) => this.setState({ activity : event.target.value})} 
-                placeholder = "ToDo Activity" /> */}
-                <TextField type = "text" value = { this.state.activity } onChange = {(event) => this.setState({ activity : event.target.value})} hintText="ToDo Activity"/>
-          {/* <button type = "submit">Add ToDo</button> */}
+          <TextField type = "text" value = { this.state.activity } onChange = {(event) => this.setState({ activity : event.target.value})} hintText="ToDo Activity"/>
           <FlatButton label="Add ToDo" type = "submit" />            
         </form>
       </MuiThemeProvider >
