@@ -5,6 +5,7 @@ import TextField from 'material-ui/TextField';
 import Checkbox from 'material-ui/Checkbox';
 import {List, ListItem} from 'material-ui/List';
 import ActionDelete from 'material-ui/svg-icons/action/delete';
+import DoneAll from 'material-ui/svg-icons/action/done-all';
 
 class Activity extends Component {
 
@@ -27,7 +28,8 @@ class Activity extends Component {
 
 class ActivityList extends Component {
   state = {
-    activities : []
+    activities : [],
+    selectAll : false
   }
 
   addNewActivity = (activityInfo) => {
@@ -59,10 +61,22 @@ class ActivityList extends Component {
     }));
   };
 
+  updateAllActivities = () => {
+    console.log("Actualiza todo");
+    this.setState(prevState => ({
+      activities : prevState.activities.map((activity, key) => {
+       
+        this.state.selectAll ? activity.status = false : activity.status = true;
+
+        return activity
+      }), selectAll : !prevState.selectAll
+    }))
+  }
+
   render() {
     return(
       <div>
-        <Form onSubmit = { this.addNewActivity } />
+        <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
         <br />
         <MuiThemeProvider>
           <List>
@@ -90,6 +104,7 @@ class Form extends Component {
     return(
       <MuiThemeProvider>
         <form onSubmit = { this.handleSubmit }>
+          <FlatButton icon = { <DoneAll /> } onClick = { this.props.updateAllActivities } />
           <TextField type = "text" value = { this.state.activity } onChange = { (event) => this.setState({ activity : event.target.value }) } hintText="ToDo Activity"/>
           <FlatButton label="Add ToDo" type = "submit" />            
         </form>
