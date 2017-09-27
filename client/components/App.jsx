@@ -6,6 +6,8 @@ import Checkbox from 'material-ui/Checkbox';
 import {List, ListItem} from 'material-ui/List';
 import ActionDelete from 'material-ui/svg-icons/action/delete';
 import DoneAll from 'material-ui/svg-icons/action/done-all';
+import MenuItem from 'material-ui/MenuItem';
+import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 
 class Activity extends Component {
 
@@ -26,10 +28,18 @@ class Activity extends Component {
   }
 }
 
+const filterEnum = {
+  all : 0,
+  active : 1,
+  completed : 2
+};
+
 class ActivityList extends Component {
   state = {
     activities : [],
-    selectAll : false
+    selectAll : false,
+    activitiesFiltered : [],            //saves the items by the filter enum
+    currentFilter : filterEnum.all,     //returns all the activities
   }
 
   addNewActivity = (activityInfo) => {
@@ -73,6 +83,28 @@ class ActivityList extends Component {
     }))
   }
 
+  filterActivites = (f) => {
+
+    this.setState(prevState => ({
+      activities : prevState.activities.filter((activity, key) => {
+       
+        switch(f) {
+          case filterEnum.active:
+            return !activity.status ? true : false;
+          break;
+          case filterEnum.completed:
+            return activity.status ? true : false;
+          break;
+          case filterEnum.all:
+            return true;
+        }
+
+      })
+    }))
+
+   
+  }
+
   render() {
     return(
       <div>
@@ -82,6 +114,18 @@ class ActivityList extends Component {
           <List>
             { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.name } deleteActivity = { this.deleteActivity } />) }
           </List>
+        </MuiThemeProvider>
+        <MuiThemeProvider>
+          <Toolbar>
+            <ToolbarGroup firstChild = { true } >
+              <FlatButton label = {this.state.activities.length} />
+            </ToolbarGroup>
+            <ToolbarGroup>
+              <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
+              <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
+              <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+            </ToolbarGroup>
+          </Toolbar>
         </MuiThemeProvider>
       </div>
     );
@@ -108,6 +152,7 @@ class Form extends Component {
           <TextField type = "text" value = { this.state.activity } onChange = { (event) => this.setState({ activity : event.target.value }) } hintText="ToDo Activity"/>
           <FlatButton label="Add ToDo" type = "submit" />            
         </form>
+
       </MuiThemeProvider >
     );
   }
