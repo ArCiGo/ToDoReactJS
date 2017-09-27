@@ -8,33 +8,68 @@ import ActionDelete from 'material-ui/svg-icons/action/delete';
 
 class Activity extends Component {
 
-  state = {
-    checked : false
+  /**To update the status of the Activity */
+  update = (checked) => {
+    this.props.updateStatusActivity(this.props.activityId);
   }
 
-  updateCheck = (checked) => {
-    this.setState((prevState) => {
-      return {
-        checked : !prevState.checked
-      }
-    })
+  /**To delete one Activity */
+  delete = (activity) => {
+    this.props.deleteActivity(this.props.activityId);
   }
 
   render() {
     return(
-      <ListItem leftCheckbox = { <Checkbox  onCheck = { this.updateCheck.bind(this) } /> } primaryText = {this.props.name} rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { () => {} } />} />
+      <ListItem leftCheckbox = { <Checkbox checked = {this.props.status} onCheck = { this.update.bind(this) } /> } primaryText = {this.props.name} rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} />
     );
   }
 }
 
 class ActivityList extends Component {
+  state = {
+    activities : []
+  }
+
+  addNewActivity = (activityInfo) => {
+    console.log("Entra");
+    this.setState({
+      activities : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }]
+    }, ()=> console.log("se salio"))
+  };
+
+  updateStatusActivity = (id) => {
+    console.log(id);
+    this.setState(prevState => ({
+      activities : prevState.activities.map((activity, key) => {
+        if(activity.id === id) {
+          activity.status = activity.status ? false : true;
+        }
+
+        return activity
+      })
+    }), () => console.log(this.state.activities) )
+  };
+
+  deleteActivity = (id) => {
+    console.log(id);
+    this.setState(prevState => ({
+      activities : prevState.activities.filter((activity, key) => {
+        return activity.id !== id;
+      })
+    }));
+  };
+
   render() {
     return(
-      <MuiThemeProvider>
-        <List>
-          { this.props.activities.map((activity, id) => <Activity key = {id} name = {activity} activityId = {id} />) }
-        </List>
-      </MuiThemeProvider>
+      <div>
+        <Form onSubmit = { this.addNewActivity } />
+        <br />
+        <MuiThemeProvider>
+          <List>
+            { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.name } deleteActivity = { this.deleteActivity } />) }
+          </List>
+        </MuiThemeProvider>
+      </div>
     );
   }
 }
@@ -54,8 +89,8 @@ class Form extends Component {
   render() {
     return(
       <MuiThemeProvider>
-        <form onSubmit = {this.handleSubmit}>
-          <TextField type = "text" value = { this.state.activity } onChange = {(event) => this.setState({ activity : event.target.value})} hintText="ToDo Activity"/>
+        <form onSubmit = { this.handleSubmit }>
+          <TextField type = "text" value = { this.state.activity } onChange = { (event) => this.setState({ activity : event.target.value }) } hintText="ToDo Activity"/>
           <FlatButton label="Add ToDo" type = "submit" />            
         </form>
       </MuiThemeProvider >
@@ -64,23 +99,9 @@ class Form extends Component {
 }
 
 class App extends React.Component {
-  state = {
-    activities : []
-  }
-
-  addNewActivity = (activityInfo) => {
-    this.setState(prevState => ({
-      activities : prevState.activities.concat(activityInfo)
-    }))
-  }
-
   render() {
     return(
-        <div>
-          <Form onSubmit = {this.addNewActivity} />
-          <br />
-          <ActivityList activities = {this.state.activities} />
-        </div>
+      <ActivityList />
     );
   }
 }
