@@ -108,10 +108,20 @@ class ActivityList extends Component {
         }
 
       }), currentFilter : f     //If I add a new item, independiently of the view (if I'm watching the completed, active or all), I don't change the current view. 
-    }))
-
-   
+    }))  
   }
+
+  deleteDoneActivities = () => {
+    console.log("bORRA todo");
+    this.setState(prevState => ({
+      activities : prevState.activities.filter((activity, key) => {     //Deletes an activity of the original array
+        return !activity.status ;
+      }), 
+      activitiesFiltered : prevState.activitiesFiltered.filter((activity, key) => {     //Also deletes an activity of the copy array
+        return !activity.status ;
+      })
+    })) ;
+  };
 
   render() {
     return(
@@ -132,6 +142,7 @@ class ActivityList extends Component {
               <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
               <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
               <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+              <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
             </ToolbarGroup>
           </Toolbar>
         </MuiThemeProvider>
