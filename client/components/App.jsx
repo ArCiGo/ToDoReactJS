@@ -28,6 +28,7 @@ class Activity extends Component {
   }
 }
 
+/**Enum with the statuses of the activities */
 const filterEnum = {
   all : 0,
   active : 1,
@@ -45,8 +46,9 @@ class ActivityList extends Component {
   addNewActivity = (activityInfo) => {
     console.log("Entra");
     this.setState({
-      activities : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }]
-    }, ()=> console.log("se salio"))
+      activities : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }],
+      activitiesFiltered : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }]     //copy of the original array
+    }, () => this.filterActivites(this.state.currentFilter) )     //Shows all the items, because currentFilter is filterEnum.all
   };
 
   updateStatusActivity = (id) => {
@@ -65,28 +67,34 @@ class ActivityList extends Component {
   deleteActivity = (id) => {
     console.log(id);
     this.setState(prevState => ({
-      activities : prevState.activities.filter((activity, key) => {
+      activities : prevState.activities.filter((activity, key) => {     //Deletes an activity of the original array
+        return activity.id !== id;
+      }), 
+      activitiesFiltered : prevState.activitiesFiltered.filter((activity, key) => {     //Also deletes an activity of the copy array
         return activity.id !== id;
       })
-    }));
+    })) ;
   };
 
   updateAllActivities = () => {
     console.log("Actualiza todo");
     this.setState(prevState => ({
       activities : prevState.activities.map((activity, key) => {
-       
         this.state.selectAll ? activity.status = false : activity.status = true;
 
         return activity
-      }), selectAll : !prevState.selectAll
+      }), selectAll : !prevState.selectAll,      //Deselects the activities, changing their status
+      activitiesFiltered : prevState.activities.map((activity, key) => {        //Also I need to update the status of the activities in the copy
+        this.state.selectAll ? activity.status = false : activity.status = true;
+
+        return activity
+      }), selectAll : !prevState.selectAll      //Deselects the activities, changing their status
     }))
   }
 
   filterActivites = (f) => {
-
     this.setState(prevState => ({
-      activities : prevState.activities.filter((activity, key) => {
+      activitiesFiltered : prevState.activities.filter((activity, key) => {
        
         switch(f) {
           case filterEnum.active:
@@ -99,7 +107,7 @@ class ActivityList extends Component {
             return true;
         }
 
-      })
+      }), currentFilter : f     //If I add a new item, independiently of the view (if I'm watching the completed, active or all), I don't change the current view. 
     }))
 
    
@@ -112,7 +120,7 @@ class ActivityList extends Component {
         <br />
         <MuiThemeProvider>
           <List>
-            { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.name } deleteActivity = { this.deleteActivity } />) }
+            { this.state.activitiesFiltered.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.name } deleteActivity = { this.deleteActivity } />) }
           </List>
         </MuiThemeProvider>
         <MuiThemeProvider>
