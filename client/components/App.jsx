@@ -8,6 +8,34 @@ import ActionDelete from 'material-ui/svg-icons/action/delete';
 import DoneAll from 'material-ui/svg-icons/action/done-all';
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
+import * as firebase from 'firebase';
+import _ from 'lodash';
+
+/********************************/
+/**Firebase *********************/
+/********************************/
+ // Initialize Firebase
+ var config = {
+  apiKey: "AIzaSyC7tCMzGS9iU8LbuonDzHFAc09HsVj6yiM",
+  authDomain: "reactjstodo-93a9f.firebaseapp.com",
+  databaseURL: "https://reactjstodo-93a9f.firebaseio.com",
+  projectId: "reactjstodo-93a9f",
+  storageBucket: "reactjstodo-93a9f.appspot.com",
+  messagingSenderId: "637042479355"
+};
+
+firebase.initializeApp(config);
+
+const activities = firebase.database().ref().child('activities');   //activities table
+console.log(activities);
+
+activities.once('value').then(function(snapshot) {
+  console.log(snapshot.val());
+});
+
+/********************************/
+/********************************/
+/********************************/
 
 class Activity extends Component {
 
@@ -23,7 +51,7 @@ class Activity extends Component {
 
   render() {
     return(
-      <ListItem leftCheckbox = { <Checkbox checked = {this.props.status} onCheck = { this.update.bind(this) } /> } primaryText = {this.props.name} rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} />
+      <ListItem leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} />
     );
   }
 }
@@ -38,90 +66,101 @@ const filterEnum = {
 class ActivityList extends Component {
   state = {
     activities : [],
-    selectAll : false,
-    activitiesFiltered : [],            //saves the items by the filter enum
     currentFilter : filterEnum.all,     //returns all the activities
   }
 
+  componentWillMount() {
+    console.log("entra componentWillMount")
+    activities.on('child_added', function(snapshot) {
+      this.setState((prevState) => ({
+        activities : [...prevState.activities, snapshot.val()]
+      }))
+    }.bind(this));
+
+    activities.on('child_changed', function(snapshot) {
+      this.setState((prevState) => ({
+        activities : prevState.activities.map((activity, key) => {
+          if(activity.id === snapshot.val().id){
+            activity = snapshot.val();
+          }
+
+          return activity;
+        })
+      }))
+    }.bind(this));
+
+    activities.on('child_removed', function(snapshot) {
+      this.setState((prevState) => ({
+        activities : prevState.activities.filter((activity, key) => {
+          return activity.id !== snapshot.val().id;
+        })
+      }))
+    }.bind(this));
+  }
+
   addNewActivity = (activityInfo) => {
-    console.log("Entra");
-    this.setState({
-      activities : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }],
-      activitiesFiltered : [...this.state.activities, { name : activityInfo, status : false, id : this.state.activities.length }]     //copy of the original array
-    }, () => this.filterActivites(this.state.currentFilter) )     //Shows all the items, because currentFilter is filterEnum.all
-  };
+    var newActivityKey = activities.push();
+
+    newActivityKey.set({
+      activity : activityInfo,
+      id : newActivityKey.key,
+      status : false
+    });
+  }
 
   updateStatusActivity = (id) => {
     console.log(id);
-    this.setState(prevState => ({
-      activities : prevState.activities.map((activity, key) => {
-        if(activity.id === id) {
-          activity.status = activity.status ? false : true;
-        }
+    var updateActivity = activities.child(id);
 
-        return activity
-      })
-    }), () => console.log(this.state.activities) )
-  };
-
-  deleteActivity = (id) => {
-    console.log(id);
-    this.setState(prevState => ({
-      activities : prevState.activities.filter((activity, key) => {     //Deletes an activity of the original array
-        return activity.id !== id;
-      }), 
-      activitiesFiltered : prevState.activitiesFiltered.filter((activity, key) => {     //Also deletes an activity of the copy array
-        return activity.id !== id;
-      })
-    })) ;
-  };
-
-  updateAllActivities = () => {
-    console.log("Actualiza todo");
-    this.setState(prevState => ({
-      activities : prevState.activities.map((activity, key) => {
-        this.state.selectAll ? activity.status = false : activity.status = true;
-
-        return activity
-      }), selectAll : !prevState.selectAll,      //Deselects the activities, changing their status
-      activitiesFiltered : prevState.activities.map((activity, key) => {        //Also I need to update the status of the activities in the copy
-        this.state.selectAll ? activity.status = false : activity.status = true;
-
-        return activity
-      }), selectAll : !prevState.selectAll      //Deselects the activities, changing their status
-    }))
+    updateActivity.once('value', function(snapshot) {
+      updateActivity.update({ status : !snapshot.val().status })
+    });
   }
 
-  filterActivites = (f) => {
-    this.setState(prevState => ({
-      activitiesFiltered : prevState.activities.filter((activity, key) => {
-       
-        switch(f) {
-          case filterEnum.active:
-            return !activity.status ? true : false;
-          break;
-          case filterEnum.completed:
-            return activity.status ? true : false;
-          break;
-          case filterEnum.all:
-            return true;
-        }
+  deleteActivity = (id) => {
+    activities.child(id).remove();
+  }
 
-      }), currentFilter : f     //If I add a new item, independiently of the view (if I'm watching the completed, active or all), I don't change the current view. 
-    }))  
+  updateAllActivities = () => {
+    console.log("actualiza todo");
+
+    this.state.activities.forEach((activity, key) => {
+      let updateActivity = activities.child(activity.id);
+      
+      updateActivity.once('value', function(snapshot) {
+        updateActivity.update({ status : true })
+      });
+    })
   }
 
   deleteDoneActivities = () => {
-    console.log("bORRA todo");
-    this.setState(prevState => ({
-      activities : prevState.activities.filter((activity, key) => {     //Deletes an activity of the original array
-        return !activity.status ;
-      }), 
-      activitiesFiltered : prevState.activitiesFiltered.filter((activity, key) => {     //Also deletes an activity of the copy array
-        return !activity.status ;
-      })
-    })) ;
-  };
+    this.state.activities.forEach((activity, key) => {
+      if(activity.status === true) {
+        activities.child(activity.id).remove();
+      }
+    })
+  }
+
+  filterActivites = (f) => {
+    activities.once('value', function(snapshot) {
+      this.setState(prevState => ({
+        activities : _.filter(snapshot.val(), (activity, key) => {
+         
+          switch(f) {
+            case filterEnum.active:
+              return !activity.status ? true : false;
+            break;
+            case filterEnum.completed:
+              return activity.status ? true : false;
+            break;
+            case filterEnum.all:
+              return true;
+          }
+  
+        }), currentFilter : f     //If I add a new item, independiently of the view (if I'm watching the completed, active or all), I don't change the current view. 
+      }))  
+    }.bind(this));   
+  } 
 
   render() {
     return(
@@ -130,7 +169,7 @@ class ActivityList extends Component {
         <br />
         <MuiThemeProvider>
           <List>
-            { this.state.activitiesFiltered.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.name } deleteActivity = { this.deleteActivity } />) }
+            { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } deleteActivity = { this.deleteActivity } />) }
           </List>
         </MuiThemeProvider>
         <MuiThemeProvider>
