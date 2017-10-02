@@ -67,6 +67,7 @@ class ActivityList extends Component {
   state = {
     activities : [],
     currentFilter : filterEnum.all,     //returns all the activities
+    selected : false
   }
 
   componentWillMount() {
@@ -75,7 +76,7 @@ class ActivityList extends Component {
       this.setState((prevState) => ({
         activities : [...prevState.activities, snapshot.val()]
       }))
-    }.bind(this));
+    }.bind(this));          //bind(this) takes the context of the outer state
 
     activities.on('child_changed', function(snapshot) {
       this.setState((prevState) => ({
@@ -87,7 +88,7 @@ class ActivityList extends Component {
           return activity;
         })
       }))
-    }.bind(this));
+    }.bind(this));          //bind(this) takes the context of the outer state
 
     activities.on('child_removed', function(snapshot) {
       this.setState((prevState) => ({
@@ -95,15 +96,15 @@ class ActivityList extends Component {
           return activity.id !== snapshot.val().id;
         })
       }))
-    }.bind(this));
+    }.bind(this));          //bind(this) takes the context of the outer state
   }
 
   addNewActivity = (activityInfo) => {
-    var newActivityKey = activities.push();
+    var newActivityKey = activities.push();         //Creates a new record
 
     newActivityKey.set({
       activity : activityInfo,
-      id : newActivityKey.key,
+      id : newActivityKey.key,                      //Inserts the ID (key)
       status : false
     });
   }
@@ -125,12 +126,20 @@ class ActivityList extends Component {
     console.log("actualiza todo");
 
     this.state.activities.forEach((activity, key) => {
-      let updateActivity = activities.child(activity.id);
+      let updateAllActivities = activities.child(activity.id);
       
-      updateActivity.once('value', function(snapshot) {
-        updateActivity.update({ status : true })
-      });
-    })
+      updateAllActivities.once('value', function(snapshot) {
+        if(this.state.selected === false) {
+          updateAllActivities.update({ status : true })
+        } else {
+          updateAllActivities.update({ status : false })
+        }
+      }.bind(this));          //I make a reference to the outer state context
+    });
+
+    this.setState(prevState => ({       //Changing the state of all activities
+      selected : !prevState.selected
+    }));
   }
 
   deleteDoneActivities = () => {
