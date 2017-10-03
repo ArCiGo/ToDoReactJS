@@ -124,7 +124,8 @@ class ActivityList extends Component {
         }
       } else {
         this.setState({
-          logged : false
+          logged : false,
+          activities : []
         })
       }
     }.bind(this))
