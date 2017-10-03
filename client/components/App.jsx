@@ -29,11 +29,9 @@ firebase.initializeApp(config);
 const activities = firebase.database().ref().child('activities');   //activities table
 //console.log(activities);
 
-activities.once('value').then(function(snapshot) {
-  //console.log(snapshot.val());
-});
-
-/**Sign In with Google */
+// activities.once('value').then(function(snapshot) {
+//   console.log(snapshot.val());
+// });
 
 /********************************/
 /********************************/
@@ -75,7 +73,24 @@ class ActivityList extends Component {
     email : null
   }
 
+  authenticationUser = () => {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if(user) {
+        this.setState({
+          logged : true
+        })
+      } else {
+        this.setState({
+          logged : false
+        })
+      }
+    }.bind(this))
+  }
+
   componentWillMount() {
+
+    // firebase.auth().
+
     console.log("entra componentWillMount")
       if(this.state.logged) {
         console.log("Debe entrar al if...else")
@@ -187,13 +202,14 @@ class ActivityList extends Component {
     firebase.auth().signInWithPopup(provider).then(function(result) {
       var token = result.credential.accessToken;
       var user = result.user;
-      console.log(user);
+      console.log("Se loggeo: " + user);
 
       this.setState(prevState => ({
         logged : !prevState.logged,
         displayName : user.displayName,
         email : user.email
       }));
+
     }.bind(this)).catch(function(error) {
       var errorCode = error.code;
       var errorMessage = error.message;
