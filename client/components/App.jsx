@@ -73,54 +73,92 @@ class ActivityList extends Component {
     email : null
   }
 
-  authenticationUser = () => {
-    firebase.auth().onAuthStateChanged(function(user) {
+  // authenticationUser = () => {
+  //   firebase.auth().onAuthStateChanged(function(user) {
+  //     if(user) {
+  //       this.setState({
+  //         logged : true
+  //       })
+  //     } else {
+  //       this.setState({
+  //         logged : false
+  //       })
+  //     }
+  //   }.bind(this))
+  // }
+
+  componentWillMount() {
+
+    firebase.auth().onAuthStateChanged(function(user) {         //Avoids to add items in the DB
+      console.log(user);
       if(user) {
         this.setState({
           logged : true
         })
+
+        if(this.state.logged) {
+          activities.on("child_added", function(snapshot) {
+            this.setState((prevState) => ({
+              activities : [...prevState.activities, snapshot.val()]
+            }))
+          }.bind(this))
+
+          activities.on('child_changed', function(snapshot) {         //Updates the item
+            this.setState((prevState) => ({
+              activities : prevState.activities.map((activity, key) => {
+                if(activity.id === snapshot.val().id){
+                  activity = snapshot.val();
+                }
+                return activity;
+              })
+            }))
+          }.bind(this));          //bind(this) takes the context of the outer state
+
+          activities.on('child_removed', function(snapshot) {         //Removes the item
+            this.setState((prevState) => ({
+              activities : prevState.activities.filter((activity, key) => {
+                return activity.id !== snapshot.val().id;
+              })
+            }))
+          }.bind(this));          //bind(this) takes the context of the outer state
+        }
       } else {
         this.setState({
           logged : false
         })
       }
     }.bind(this))
-  }
-
-  componentWillMount() {
-
-    // firebase.auth().
 
     console.log("entra componentWillMount")
-      if(this.state.logged) {
-        console.log("Debe entrar al if...else")
-        activities.on('child_added', function(snapshot) {         //Adds the item
-          this.setState((prevState) => ({
-            activities : [...prevState.activities, snapshot.val()]
-          }))
-        }.bind(this));          //bind(this) takes the context of the outer state
+      // if(this.state.logged) {
+        // console.log("Debe entrar al if...else")
+        // activities.on('child_added', function(snapshot) {         //Adds the item
+        //   this.setState((prevState) => ({
+        //     activities : [...prevState.activities, snapshot.val()]
+        //   }))
+        // }.bind(this));          //bind(this) takes the context of the outer state
     
-        activities.on('child_changed', function(snapshot) {         //Updates the item
-          this.setState((prevState) => ({
-            activities : prevState.activities.map((activity, key) => {
-              if(activity.id === snapshot.val().id){
-                activity = snapshot.val();
-              }
+        // activities.on('child_changed', function(snapshot) {         //Updates the item
+        //   this.setState((prevState) => ({
+        //     activities : prevState.activities.map((activity, key) => {
+        //       if(activity.id === snapshot.val().id){
+        //         activity = snapshot.val();
+        //       }
     
-              return activity;
-            })
-          }))
-        }.bind(this));          //bind(this) takes the context of the outer state
+        //       return activity;
+        //     })
+        //   }))
+        // }.bind(this));          //bind(this) takes the context of the outer state
     
-        activities.on('child_removed', function(snapshot) {         //Removes the item
-          this.setState((prevState) => ({
-            activities : prevState.activities.filter((activity, key) => {
-              return activity.id !== snapshot.val().id;
-            })
-          }))
-        }.bind(this));          //bind(this) takes the context of the outer state
-      }
-  }
+        // activities.on('child_removed', function(snapshot) {         //Removes the item
+        //   this.setState((prevState) => ({
+        //     activities : prevState.activities.filter((activity, key) => {
+        //       return activity.id !== snapshot.val().id;
+        //     })
+        //   }))
+        // }.bind(this));          //bind(this) takes the context of the outer state
+      // }
+   }
 
   addNewActivity = (activityInfo) => {
     var newActivityKey = activities.push();         //Creates a new record
