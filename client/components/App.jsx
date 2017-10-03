@@ -27,10 +27,10 @@ import _ from 'lodash';
 firebase.initializeApp(config);
 
 const activities = firebase.database().ref().child('activities');   //activities table
-console.log(activities);
+//console.log(activities);
 
 activities.once('value').then(function(snapshot) {
-  console.log(snapshot.val());
+  //console.log(snapshot.val());
 });
 
 /**Sign In with Google */
@@ -70,36 +70,41 @@ class ActivityList extends Component {
     activities : [],
     currentFilter : filterEnum.all,     //returns all the activities
     selected : false,
-    logged : false
+    logged : false,
+    displayName : null,
+    email : null
   }
 
   componentWillMount() {
     console.log("entra componentWillMount")
-    activities.on('child_added', function(snapshot) {
-      this.setState((prevState) => ({
-        activities : [...prevState.activities, snapshot.val()]
-      }))
-    }.bind(this));          //bind(this) takes the context of the outer state
-
-    activities.on('child_changed', function(snapshot) {
-      this.setState((prevState) => ({
-        activities : prevState.activities.map((activity, key) => {
-          if(activity.id === snapshot.val().id){
-            activity = snapshot.val();
-          }
-
-          return activity;
-        })
-      }))
-    }.bind(this));          //bind(this) takes the context of the outer state
-
-    activities.on('child_removed', function(snapshot) {
-      this.setState((prevState) => ({
-        activities : prevState.activities.filter((activity, key) => {
-          return activity.id !== snapshot.val().id;
-        })
-      }))
-    }.bind(this));          //bind(this) takes the context of the outer state
+      if(this.state.logged) {
+        console.log("Debe entrar al if...else")
+        activities.on('child_added', function(snapshot) {         //Adds the item
+          this.setState((prevState) => ({
+            activities : [...prevState.activities, snapshot.val()]
+          }))
+        }.bind(this));          //bind(this) takes the context of the outer state
+    
+        activities.on('child_changed', function(snapshot) {         //Updates the item
+          this.setState((prevState) => ({
+            activities : prevState.activities.map((activity, key) => {
+              if(activity.id === snapshot.val().id){
+                activity = snapshot.val();
+              }
+    
+              return activity;
+            })
+          }))
+        }.bind(this));          //bind(this) takes the context of the outer state
+    
+        activities.on('child_removed', function(snapshot) {         //Removes the item
+          this.setState((prevState) => ({
+            activities : prevState.activities.filter((activity, key) => {
+              return activity.id !== snapshot.val().id;
+            })
+          }))
+        }.bind(this));          //bind(this) takes the context of the outer state
+      }
   }
 
   addNewActivity = (activityInfo) => {
@@ -184,14 +189,12 @@ class ActivityList extends Component {
       var user = result.user;
       console.log(user);
 
-      // this.setState(prevState => ({
-      //   logged : !prevState.logged
-      // }));
-      this.state.logged = true;
-
-      console.log("Actualiza logged: " + this.state.logged)
-
-    }).catch(function(error) {
+      this.setState(prevState => ({
+        logged : !prevState.logged,
+        displayName : user.displayName,
+        email : user.email
+      }));
+    }.bind(this)).catch(function(error) {
       var errorCode = error.code;
       var errorMessage = error.message;
       var email = error.email;
@@ -202,16 +205,19 @@ class ActivityList extends Component {
   logout = () => {
     firebase.auth().signOut().then(function() {
       console.log("Salió");
-    })
 
-    this.setState(prevState => ({
-      logged : false
-    }))
+      this.setState(prevState => ({
+        logged : false,
+        displayName : null,
+        email : null
+      }))
+    }.bind(this))
   }
 
   render() {
     return(
       <div>
+        { this.state.logged === false ? <MuiThemeProvider><FlatButton label = "Log In" onClick = { this.login } /></MuiThemeProvider> : <MuiThemeProvider><FlatButton label = "Log Out" onClick = { this.logout } /></MuiThemeProvider> }
         <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
         <br />
         <MuiThemeProvider>
@@ -231,13 +237,6 @@ class ActivityList extends Component {
               <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
             </ToolbarGroup>
           </Toolbar>
-        </MuiThemeProvider>
-
-        <MuiThemeProvider>
-          <FlatButton label = "Log In" onClick = { this.login } />
-        </MuiThemeProvider>
-        <MuiThemeProvider>
-          <FlatButton label = "Log Out" onClick = { this.logout } />
         </MuiThemeProvider>
       </div>
     );
