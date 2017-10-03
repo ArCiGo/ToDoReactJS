@@ -14,6 +14,7 @@ import _ from 'lodash';
 import Badge from 'material-ui/Badge';
 import NotificationsIcon from 'material-ui/svg-icons/social/notifications';
 import Avatar from 'material-ui/Avatar';
+import Dialog from 'material-ui/Dialog';
 
 /********************************/
 /**Firebase *********************/
@@ -70,7 +71,7 @@ class ActivityList extends Component {
     logged : false,
     displayName : null,
     email : null,
-    photoURL : '',
+    photoURL : ''
   }
 
   componentWillMount() {
@@ -246,7 +247,17 @@ class ActivityList extends Component {
             />
           </MuiThemeProvider>
           <br />
-          <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
+          { this.state.logged === true ? 
+              <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
+              :
+              <MuiThemeProvider>
+                <Toolbar>
+                  <ToolbarGroup style = {{ float: 'none', marginLeft: 'auto', marginRight: 'auto' }}>
+                    <ToolbarTitle text = "You must be logged to add an activity!" />
+                  </ToolbarGroup>
+                </Toolbar>
+              </MuiThemeProvider>
+          }
           <br />
           <MuiThemeProvider>
             <List>
@@ -254,19 +265,24 @@ class ActivityList extends Component {
             </List>
           </MuiThemeProvider>
           <MuiThemeProvider>
-            <Toolbar>
-              <ToolbarGroup firstChild = { true } >
-                <Badge badgeContent = { this.state.activities.length } primary = { true }>
-                  <NotificationsIcon />
-                </Badge>
-              </ToolbarGroup>
-              <ToolbarGroup>
-                <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
-                <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
-                <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
-                <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
-              </ToolbarGroup>
-            </Toolbar>
+            { this.state.logged === true &&
+                <div>
+                  <Toolbar>
+                    <ToolbarGroup firstChild = { true } >
+                        <Badge badgeContent = { this.state.activities.length } primary = { true }>
+                          <NotificationsIcon />
+                        </Badge>
+                    </ToolbarGroup>
+                    <ToolbarGroup>
+                        <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
+                        <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
+                        <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+                        <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
+                    </ToolbarGroup>
+                  </Toolbar>
+                </div>
+            }
+            
           </MuiThemeProvider>
       </div>
     );
