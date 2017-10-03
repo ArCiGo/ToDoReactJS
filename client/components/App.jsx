@@ -33,6 +33,8 @@ activities.once('value').then(function(snapshot) {
   console.log(snapshot.val());
 });
 
+/**Sign In with Google */
+
 /********************************/
 /********************************/
 /********************************/
@@ -67,7 +69,8 @@ class ActivityList extends Component {
   state = {
     activities : [],
     currentFilter : filterEnum.all,     //returns all the activities
-    selected : false
+    selected : false,
+    logged : false
   }
 
   componentWillMount() {
@@ -171,6 +174,41 @@ class ActivityList extends Component {
     }.bind(this));   
   } 
 
+  login = () => {
+    var provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    provider.addScope('https://www.googleapis.com/auth/plus.me')
+    firebase.auth().signInWithPopup(provider).then(function(result) {
+      var token = result.credential.accessToken;
+      var user = result.user;
+      console.log(user);
+
+      // this.setState(prevState => ({
+      //   logged : !prevState.logged
+      // }));
+      this.state.logged = true;
+
+      console.log("Actualiza logged: " + this.state.logged)
+
+    }).catch(function(error) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      var email = error.email;
+      var credential = error.credential;
+    });
+  }
+
+  logout = () => {
+    firebase.auth().signOut().then(function() {
+      console.log("Salió");
+    })
+
+    this.setState(prevState => ({
+      logged : false
+    }))
+  }
+
   render() {
     return(
       <div>
@@ -193,6 +231,13 @@ class ActivityList extends Component {
               <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
             </ToolbarGroup>
           </Toolbar>
+        </MuiThemeProvider>
+
+        <MuiThemeProvider>
+          <FlatButton label = "Log In" onClick = { this.login } />
+        </MuiThemeProvider>
+        <MuiThemeProvider>
+          <FlatButton label = "Log Out" onClick = { this.logout } />
         </MuiThemeProvider>
       </div>
     );
