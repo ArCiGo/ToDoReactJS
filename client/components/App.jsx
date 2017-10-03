@@ -8,8 +8,12 @@ import ActionDelete from 'material-ui/svg-icons/action/delete';
 import DoneAll from 'material-ui/svg-icons/action/done-all';
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
+import AppBar from 'material-ui/AppBar';
 import * as firebase from 'firebase';
 import _ from 'lodash';
+import Badge from 'material-ui/Badge';
+import NotificationsIcon from 'material-ui/svg-icons/social/notifications';
+import Avatar from 'material-ui/Avatar';
 
 /********************************/
 /**Firebase *********************/
@@ -27,11 +31,6 @@ import _ from 'lodash';
 firebase.initializeApp(config);
 
 const activities = firebase.database().ref().child('activities');   //activities table
-//console.log(activities);
-
-// activities.once('value').then(function(snapshot) {
-//   console.log(snapshot.val());
-// });
 
 /********************************/
 /********************************/
@@ -70,38 +69,28 @@ class ActivityList extends Component {
     selected : false,
     logged : false,
     displayName : null,
-    email : null
+    email : null,
+    photoURL : '',
   }
-
-  // authenticationUser = () => {
-  //   firebase.auth().onAuthStateChanged(function(user) {
-  //     if(user) {
-  //       this.setState({
-  //         logged : true
-  //       })
-  //     } else {
-  //       this.setState({
-  //         logged : false
-  //       })
-  //     }
-  //   }.bind(this))
-  // }
 
   componentWillMount() {
 
     firebase.auth().onAuthStateChanged(function(user) {         //Avoids to add items in the DB
-      console.log(user);
       if(user) {
+        console.log(user);
         this.setState({
-          logged : true
+          logged : true,
+          displayName : user.displayName,
+          email : user.email,
+          photoURL : user.photoURL
         })
 
-        if(this.state.logged) {
-          activities.on("child_added", function(snapshot) {
+        if(this.state.logged) {         //Checks if the user is logged
+          activities.on("child_added", function(snapshot) {           //Populates the list
             this.setState((prevState) => ({
               activities : [...prevState.activities, snapshot.val()]
             }))
-          }.bind(this))
+          }.bind(this));          //bind(this) takes the context of the outer state
 
           activities.on('child_changed', function(snapshot) {         //Updates the item
             this.setState((prevState) => ({
@@ -125,40 +114,15 @@ class ActivityList extends Component {
       } else {
         this.setState({
           logged : false,
+          displayName : null,
+          email : null,
+          photoURL : null,
           activities : []
         })
       }
-    }.bind(this))
+    }.bind(this))         //bind(this) takes the context of the outer state
 
     console.log("entra componentWillMount")
-      // if(this.state.logged) {
-        // console.log("Debe entrar al if...else")
-        // activities.on('child_added', function(snapshot) {         //Adds the item
-        //   this.setState((prevState) => ({
-        //     activities : [...prevState.activities, snapshot.val()]
-        //   }))
-        // }.bind(this));          //bind(this) takes the context of the outer state
-    
-        // activities.on('child_changed', function(snapshot) {         //Updates the item
-        //   this.setState((prevState) => ({
-        //     activities : prevState.activities.map((activity, key) => {
-        //       if(activity.id === snapshot.val().id){
-        //         activity = snapshot.val();
-        //       }
-    
-        //       return activity;
-        //     })
-        //   }))
-        // }.bind(this));          //bind(this) takes the context of the outer state
-    
-        // activities.on('child_removed', function(snapshot) {         //Removes the item
-        //   this.setState((prevState) => ({
-        //     activities : prevState.activities.filter((activity, key) => {
-        //       return activity.id !== snapshot.val().id;
-        //     })
-        //   }))
-        // }.bind(this));          //bind(this) takes the context of the outer state
-      // }
    }
 
   addNewActivity = (activityInfo) => {
@@ -244,9 +208,7 @@ class ActivityList extends Component {
       console.log("Se loggeo: " + user);
 
       this.setState(prevState => ({
-        logged : !prevState.logged,
-        displayName : user.displayName,
-        email : user.email
+        logged : !prevState.logged
       }));
 
     }.bind(this)).catch(function(error) {
@@ -262,37 +224,50 @@ class ActivityList extends Component {
       console.log("Salió");
 
       this.setState(prevState => ({
-        logged : false,
-        displayName : null,
-        email : null
+        logged : false
       }))
     }.bind(this))
   }
 
   render() {
     return(
-      <div>
-        { this.state.logged === false ? <MuiThemeProvider><FlatButton label = "Log In" onClick = { this.login } /></MuiThemeProvider> : <MuiThemeProvider><FlatButton label = "Log Out" onClick = { this.logout } /></MuiThemeProvider> }
-        <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
-        <br />
-        <MuiThemeProvider>
-          <List>
-            { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } deleteActivity = { this.deleteActivity } />) }
-          </List>
-        </MuiThemeProvider>
-        <MuiThemeProvider>
-          <Toolbar>
-            <ToolbarGroup firstChild = { true } >
-              <FlatButton label = {this.state.activities.length} />
-            </ToolbarGroup>
-            <ToolbarGroup>
-              <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
-              <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
-              <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
-              <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
-            </ToolbarGroup>
-          </Toolbar>
-        </MuiThemeProvider>
+        <div>
+          <MuiThemeProvider>
+            <AppBar
+              showMenuIconButton = { false }
+              iconElementLeft = { <Avatar src = { this.state.photoURL } /> }
+              title = { this.state.displayName }
+              iconElementRight = { 
+                this.state.logged === false ? 
+                  <FlatButton label = "Log In" onClick = { this.login } />
+                  :
+                  <FlatButton label = "Log Out" onClick = { this.logout } />
+                }
+            />
+          </MuiThemeProvider>
+          <br />
+          <Form onSubmit = { this.addNewActivity } updateAllActivities = { this.updateAllActivities} />
+          <br />
+          <MuiThemeProvider>
+            <List>
+              { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } deleteActivity = { this.deleteActivity } />) }
+            </List>
+          </MuiThemeProvider>
+          <MuiThemeProvider>
+            <Toolbar>
+              <ToolbarGroup firstChild = { true } >
+                <Badge badgeContent = { this.state.activities.length } primary = { true }>
+                  <NotificationsIcon />
+                </Badge>
+              </ToolbarGroup>
+              <ToolbarGroup>
+                <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
+                <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
+                <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+                <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
+              </ToolbarGroup>
+            </Toolbar>
+          </MuiThemeProvider>
       </div>
     );
   }
