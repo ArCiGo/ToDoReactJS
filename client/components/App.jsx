@@ -286,23 +286,21 @@ class ActivityList extends Component {
             </List>
           </MuiThemeProvider>
           { this.state.logged === true &&
-              <div>
-                <MuiThemeProvider>
-                  <Toolbar>
-                      <ToolbarGroup firstChild = { true } >
-                          <Badge badgeContent = { this.state.activities.length } primary = { true }>
-                            <NotificationsIcon />
-                          </Badge>
-                      </ToolbarGroup>
-                      <ToolbarGroup>
-                          <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
-                          <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
-                          <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
-                          <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
-                      </ToolbarGroup>
-                    </Toolbar>
-                </MuiThemeProvider>
-              </div>
+              <MuiThemeProvider>
+                <Toolbar>
+                    <ToolbarGroup firstChild = { true } >
+                        <Badge badgeContent = { this.state.activities.length } primary = { true }>
+                          <NotificationsIcon />
+                        </Badge>
+                    </ToolbarGroup>
+                    <ToolbarGroup>
+                        <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
+                        <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
+                        <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+                        <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
+                    </ToolbarGroup>
+                  </Toolbar>
+              </MuiThemeProvider>
           }
       </div>
     );
