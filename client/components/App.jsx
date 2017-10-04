@@ -37,6 +37,16 @@ const activities = firebase.database().ref().child('activities');   //activities
 /********************************/
 /********************************/
 
+const styles = {
+  underlinedActivity : {
+    textDecoration: 'line-through'
+  },
+
+  disableunderlinedActivity : {
+    textDecoration: 'none'
+  }
+}
+
 class Activity extends Component {
 
   /**To update the status of the Activity */
@@ -51,7 +61,7 @@ class Activity extends Component {
 
   render() {
     return(
-      <ListItem leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} />
+      <ListItem leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} style = { this.props.status ? styles.underlinedActivity : styles.disableunderlinedActivity } />
     );
   }
 }
