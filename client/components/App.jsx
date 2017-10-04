@@ -245,7 +245,6 @@ class ActivityList extends Component {
         <div>
           <MuiThemeProvider>
             <AppBar
-              showMenuIconButton = { false }
               iconElementLeft = { <Avatar src = { this.state.photoURL } /> }
               title = { this.state.displayName }
               iconElementRight = { 
