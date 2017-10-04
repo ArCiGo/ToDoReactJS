@@ -59,9 +59,14 @@ class Activity extends Component {
     this.props.deleteActivity(this.props.activityId);
   }
 
+  edit = (activity) => {
+    console.log("Entra al edit(). ID:" + this.props.activityId + ". Activity: " + this.props.name)
+    //this.props.editActivity(this.props.activityId, this.props.name)
+  }
+
   render() {
     return(
-      <ListItem leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } />} style = { this.props.status ? styles.underlinedActivity : styles.disableunderlinedActivity } />
+      <ListItem onDoubleClick = { this.edit.bind(this) } leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } /> } style = { this.props.status ? styles.underlinedActivity : styles.disableunderlinedActivity } />
     );
   }
 }
@@ -81,14 +86,14 @@ class ActivityList extends Component {
     logged : false,
     displayName : null,
     email : null,
-    photoURL : ''
+    photoURL : '',
+    open : true          //Dialog open state
   }
 
   componentWillMount() {
 
     firebase.auth().onAuthStateChanged(function(user) {         //Avoids to add items in the DB
       if(user) {
-        console.log(user);
         this.setState({
           logged : true,
           displayName : user.displayName,
@@ -158,6 +163,18 @@ class ActivityList extends Component {
   deleteActivity = (id) => {
     activities.child(id).remove();
   }
+
+  editActivity = (id, activityName) => {
+    if(id !== null || activityName !== null || activityName.length > 0) {
+      <Dialog open = { this.state.open } >
+        <TextField defaultValue = { activityName } />
+        {/* <form onSubmit = { this.handleEdit }>
+          <TextField defaultValue = { activityName } />
+          <FlatButton label="Edit Activity" type = "submit" />
+        </form> */}
+      </Dialog>
+    }
+  };
 
   updateAllActivities = () => {
     console.log("actualiza todo");
@@ -247,12 +264,7 @@ class ActivityList extends Component {
             <AppBar
               iconElementLeft = { <Avatar src = { this.state.photoURL } /> }
               title = { this.state.displayName }
-              iconElementRight = { 
-                this.state.logged === false ? 
-                  <FlatButton label = "Log In" onClick = { this.login } />
-                  :
-                  <FlatButton label = "Log Out" onClick = { this.logout } />
-                }
+              iconElementRight = { this.state.logged === false ? <FlatButton label = "Log In" onClick = { this.login } /> : <FlatButton label = "Log Out" onClick = { this.logout } /> }
             />
           </MuiThemeProvider>
           <br />
@@ -273,26 +285,25 @@ class ActivityList extends Component {
               { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } deleteActivity = { this.deleteActivity } />) }
             </List>
           </MuiThemeProvider>
-          <MuiThemeProvider>
-            { this.state.logged === true &&
-                <div>
+          { this.state.logged === true &&
+              <div>
+                <MuiThemeProvider>
                   <Toolbar>
-                    <ToolbarGroup firstChild = { true } >
-                        <Badge badgeContent = { this.state.activities.length } primary = { true }>
-                          <NotificationsIcon />
-                        </Badge>
-                    </ToolbarGroup>
-                    <ToolbarGroup>
-                        <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
-                        <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
-                        <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
-                        <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
-                    </ToolbarGroup>
-                  </Toolbar>
-                </div>
-            }
-            
-          </MuiThemeProvider>
+                      <ToolbarGroup firstChild = { true } >
+                          <Badge badgeContent = { this.state.activities.length } primary = { true }>
+                            <NotificationsIcon />
+                          </Badge>
+                      </ToolbarGroup>
+                      <ToolbarGroup>
+                          <FlatButton label = "All" onClick = { () => this.filterActivites(filterEnum.all) } />
+                          <FlatButton label = "Active" onClick = { () => this.filterActivites(filterEnum.active) } />
+                          <FlatButton label = "Completed" onClick = { () => this.filterActivites(filterEnum.completed) } />
+                          <FlatButton label = "Remove Done" onClick = { () => this.deleteDoneActivities() } />
+                      </ToolbarGroup>
+                    </Toolbar>
+                </MuiThemeProvider>
+              </div>
+          }
       </div>
     );
   }
