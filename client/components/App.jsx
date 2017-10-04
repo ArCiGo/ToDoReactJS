@@ -61,7 +61,7 @@ class Activity extends Component {
 
   edit = (activity) => {
     console.log("Entra al edit(). ID:" + this.props.activityId + ". Activity: " + this.props.name)
-    //this.props.editActivity(this.props.activityId, this.props.name)
+    this.props.editActivity(this.props.activityId, this.props.name)
   }
 
   render() {
@@ -165,6 +165,7 @@ class ActivityList extends Component {
   }
 
   editActivity = (id, activityName) => {
+    console.log("Se están mandando los parámetros aquí")
     if(id !== null || activityName !== null || activityName.length > 0) {
       <Dialog open = { this.state.open } >
         <TextField defaultValue = { activityName } />
@@ -282,7 +283,7 @@ class ActivityList extends Component {
           <br />
           <MuiThemeProvider>
             <List>
-              { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } deleteActivity = { this.deleteActivity } />) }
+              { this.state.activities.map((activity, id) => <Activity key = {id} activityId = { activity.id } status = { activity.status } updateStatusActivity = {this.updateStatusActivity} name = { activity.activity } editActivity = { this.editActivity } deleteActivity = { this.deleteActivity } />) }
             </List>
           </MuiThemeProvider>
           { this.state.logged === true &&
