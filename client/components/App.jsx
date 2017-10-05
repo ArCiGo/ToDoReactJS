@@ -6,6 +6,7 @@ import Checkbox from 'material-ui/Checkbox';
 import {List, ListItem} from 'material-ui/List';
 import ActionDelete from 'material-ui/svg-icons/action/delete';
 import DoneAll from 'material-ui/svg-icons/action/done-all';
+import Create from 'material-ui/svg-icons/content/create'
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 import AppBar from 'material-ui/AppBar';
@@ -31,7 +32,7 @@ import Dialog from 'material-ui/Dialog';
 
 firebase.initializeApp(config);
 
-const activities = firebase.database().ref().child('activities');   //activities table
+const activitiesFirebase = firebase.database().ref().child('activities');   //activities table
 
 /********************************/
 /********************************/
@@ -40,10 +41,6 @@ const activities = firebase.database().ref().child('activities');   //activities
 const styles = {
   underlinedActivity : {
     textDecoration: 'line-through'
-  },
-
-  disableunderlinedActivity : {
-    textDecoration: 'none'
   }
 }
 
@@ -66,7 +63,7 @@ class Activity extends Component {
 
   render() {
     return(
-      <ListItem onDoubleClick = { this.edit.bind(this) } leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } /> } style = { this.props.status ? styles.underlinedActivity : styles.disableunderlinedActivity } />
+      <ListItem leftCheckbox = { <Checkbox checked = { this.props.status } onCheck = { this.update.bind(this) } /> } primaryText = { this.props.name } rightIconButton = { <span><FlatButton icon = { <Create /> } onClick = { this.edit.bind(this) } /> <FlatButton icon = { <ActionDelete /> } onClick = { this.delete.bind(this) } /></span> } style = { this.props.status && styles.underlinedActivity } />
     );
   }
 }
@@ -87,7 +84,9 @@ class ActivityList extends Component {
     displayName : null,
     email : null,
     photoURL : '',
-    open : true          //Dialog open state
+    open : false,         //Dialog open state
+    activityName : '',    //Dialog activity name
+    activityId : ''       //Dialog activity id
   }
 
   componentWillMount() {
@@ -102,13 +101,13 @@ class ActivityList extends Component {
         })
 
         if(this.state.logged) {         //Checks if the user is logged
-          activities.on("child_added", function(snapshot) {           //Populates the list
+          activitiesFirebase.on("child_added", function(snapshot) {           //Populates the list
             this.setState((prevState) => ({
               activities : [...prevState.activities, snapshot.val()]
             }))
           }.bind(this));          //bind(this) takes the context of the outer state
 
-          activities.on('child_changed', function(snapshot) {         //Updates the item
+          activitiesFirebase.on('child_changed', function(snapshot) {         //Updates the item
             this.setState((prevState) => ({
               activities : prevState.activities.map((activity, key) => {
                 if(activity.id === snapshot.val().id){
@@ -119,7 +118,7 @@ class ActivityList extends Component {
             }))
           }.bind(this));          //bind(this) takes the context of the outer state
 
-          activities.on('child_removed', function(snapshot) {         //Removes the item
+          activitiesFirebase.on('child_removed', function(snapshot) {         //Removes the item
             this.setState((prevState) => ({
               activities : prevState.activities.filter((activity, key) => {
                 return activity.id !== snapshot.val().id;
@@ -142,7 +141,7 @@ class ActivityList extends Component {
    }
 
   addNewActivity = (activityInfo) => {
-    var newActivityKey = activities.push();         //Creates a new record
+    var newActivityKey = activitiesFirebase.push();         //Creates a new record
 
     newActivityKey.set({
       activity : activityInfo,
@@ -153,35 +152,58 @@ class ActivityList extends Component {
 
   updateStatusActivity = (id) => {
     console.log(id);
-    var updateActivity = activities.child(id);
+    var updateActivity = activitiesFirebase.child(id);
 
     updateActivity.once('value', function(snapshot) {
       updateActivity.update({ status : !snapshot.val().status })
     });
   }
 
-  deleteActivity = (id) => {
-    activities.child(id).remove();
+  /**Opens the dialog with the form */
+  editActivity = (activityId, activityName) => {
+    console.log("editActivity(): " + activityId + ", " + activityName)
+
+    this.setState({
+      open : true,
+      activityId : activityId,
+      activityName : activityName
+    })
+  };
+
+  /**Closes the dialog */
+  editActivityClose = () => {
+    this.setState({
+      open : false,
+      activityName : '',
+      activityId : ''
+    })
   }
 
-  editActivity = (id, activityName) => {
-    console.log("Se están mandando los parámetros aquí")
-    if(id !== null || activityName !== null || activityName.length > 0) {
-      <Dialog open = { this.state.open } >
-        <TextField defaultValue = { activityName } />
-        {/* <form onSubmit = { this.handleEdit }>
-          <TextField defaultValue = { activityName } />
-          <FlatButton label="Edit Activity" type = "submit" />
-        </form> */}
-      </Dialog>
-    }
-  };
+  handleEditActivity = (event) => {
+    event.preventDefault();
+    
+    var editActivity = activitiesFirebase.child(this.state.activityId);
+
+    editActivity.once('value', function(snapshot) {
+      editActivity.update({ activity : this.state.activityName })
+    }.bind(this));
+
+    this.setState({
+      open : false,
+      activityName : '',
+      activityId : ''
+    })
+  }
+
+  deleteActivity = (id) => {
+    activitiesFirebase.child(id).remove();
+  }
 
   updateAllActivities = () => {
     console.log("actualiza todo");
 
     this.state.activities.forEach((activity, key) => {
-      let updateAllActivities = activities.child(activity.id);
+      let updateAllActivities = activitiesFirebase.child(activity.id);
       
       updateAllActivities.once('value', function(snapshot) {
         if(this.state.selected === false) {
@@ -200,13 +222,13 @@ class ActivityList extends Component {
   deleteDoneActivities = () => {
     this.state.activities.forEach((activity, key) => {
       if(activity.status === true) {
-        activities.child(activity.id).remove();
+        activitiesFirebase.child(activity.id).remove();
       }
     })
   }
 
   filterActivites = (f) => {
-    activities.once('value', function(snapshot) {
+    activitiesFirebase.once('value', function(snapshot) {
       this.setState(prevState => ({
         activities : _.filter(snapshot.val(), (activity, key) => {
          
@@ -261,6 +283,16 @@ class ActivityList extends Component {
   render() {
     return(
         <div>
+          <MuiThemeProvider>
+            <Dialog title = "Edit ToDo" open = { this.state.open } >
+              <form onSubmit = { this.editActivity }>
+                <TextField name = "activityName" defaultValue = { this.state.activityName } onChange = { (event) => this.setState({ activityName : event.target.value }) } />
+                <br /><br />
+                <FlatButton label="Edit" type = "submit" onClick = { this.handleEditActivity } />
+                <FlatButton label="Cancel" onClick = { this.editActivityClose } />
+              </form>
+            </Dialog>
+          </MuiThemeProvider>
           <MuiThemeProvider>
             <AppBar
               iconElementLeft = { <Avatar src = { this.state.photoURL } /> }
